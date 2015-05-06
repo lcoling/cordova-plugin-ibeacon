@@ -43,6 +43,8 @@
 - (void) initLocationManager {
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
+    
+    NSLog(@"LocationManager # monitored regions: %lu", self.locationManager.monitoredRegions.count);
 }
 
 - (void) initPeripheralManager {
@@ -110,6 +112,12 @@
 
 -(void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
     
+    // avoid handling geofences
+    if ([region isKindOfClass:[CLCircularRegion class]]) {
+        [[self getLogger] debugLog:@"didEnterRegion: Ignoring geofence with identifier: %@", region.identifier];
+        return;
+    }
+    
     [self.queue addOperationWithBlock:^{
         
         [self _handleCallSafely:^CDVPluginResult *(CDVInvokedUrlCommand *command) {
@@ -131,6 +139,12 @@
 
 -(void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
 
+    // avoid handling geofences
+    if ([region isKindOfClass:[CLCircularRegion class]]) {
+        [[self getLogger] debugLog:@"didExitRegion: Ignoring geofence with identifier: %@", region.identifier];
+        return;
+    }
+    
     [self.queue addOperationWithBlock:^{
         
         [self _handleCallSafely:^CDVPluginResult *(CDVInvokedUrlCommand *command) {
@@ -473,7 +487,16 @@
     
     [self _handleCallSafely:^CDVPluginResult *(CDVInvokedUrlCommand *command) {
         
-        NSArray* arrayOfRegions = [self mapsOfRegions:self.locationManager.monitoredRegions];
+        // filter-out any non-iBeacon regions
+        NSMutableSet *iBeaconRegions = [NSMutableSet set];
+        
+        for (id region in self.locationManager.monitoredRegions) {
+            if ([region isKindOfClass:[CLBeaconRegion class]]) {
+                [iBeaconRegions addObject:region];
+            }
+        }
+        
+        NSArray* arrayOfRegions = [self mapsOfRegions:iBeaconRegions];
         return [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:arrayOfRegions];
         
     } :command];
