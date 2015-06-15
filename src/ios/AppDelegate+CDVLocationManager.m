@@ -65,7 +65,7 @@
 }
 
 - (void)setBackgroundTaskIdentifier:(UIBackgroundTaskIdentifier)backgroundTaskIdentifier {
-    NSNumber *asNumber = [NSNumber numberWithUnsignedInt:backgroundTaskIdentifier];
+    NSNumber *asNumber = [NSNumber numberWithUnsignedLong:backgroundTaskIdentifier];
     objc_setAssociatedObject(self, @selector(backgroundTaskIdentifier), asNumber, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
@@ -74,6 +74,7 @@
     UIApplication *application = [UIApplication sharedApplication];
 
     self.backgroundTaskIdentifier = [application beginBackgroundTaskWithExpirationHandler:^{
+        [[UIApplication sharedApplication] endBackgroundTask:self.backgroundTaskIdentifier];
         self.backgroundTaskIdentifier = UIBackgroundTaskInvalid;
 
     }];
