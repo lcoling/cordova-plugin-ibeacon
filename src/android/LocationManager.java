@@ -190,7 +190,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
         	enableBluetooth(callbackContext);
         } else if (action.equals("disableBluetooth")) {
         	disableBluetooth(callbackContext);
-        } else {
+        } else if (action.equals("getDeviceStatus")) {
+			getDeviceStatus(callbackContext);
+		} else {
             return false;
         }
         return true;
@@ -541,7 +543,78 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 			}
     	});
     }
-    
+
+	private boolean determineIfLocationServicesEnabled() {
+		boolean gpsProviderEnabled = false;
+		boolean networkProviderEnabled = false;
+
+		Context context = cordova.getActivity();
+
+		android.location.LocationManager locationManager =
+				(android.location.LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+
+		try {
+			gpsProviderEnabled = locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER);
+		}
+		catch (Exception ex)
+		{
+			gpsProviderEnabled = false;
+		}
+
+		try {
+			networkProviderEnabled = locationManager.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER);
+		}
+		catch (Exception ex)
+		{
+			networkProviderEnabled = false;
+		}
+
+		return gpsProviderEnabled || networkProviderEnabled;
+	}
+
+	private void getDeviceStatus(final CallbackContext callbackContext) {
+		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
+
+			@Override
+			public PluginResult run() {
+
+				// always true for android prior to Android M because the user has to agree
+				// to give the permission before installing the app
+				boolean localNotificationsEnabled = true;
+
+				boolean locationServicesEnabled = determineIfLocationServicesEnabled();
+
+				boolean isBluetoothEnabled = true;
+				try {
+					isBluetoothEnabled  = checkIfBluetoothIsEnabled();
+				} catch (Exception e) {
+					debugWarn("'isBluetoothEnabled' exception "+e.getMessage());
+					isBluetoothEnabled = false;
+				}
+
+				try {
+
+					JSONObject data = new JSONObject();
+					data.put("locationServicesEnabled", locationServicesEnabled);
+					data.put("bluetoothEnabled",isBluetoothEnabled);
+					data.put("localNotificationsEnabled", localNotificationsEnabled);
+
+					//send and keep reference to callback
+					PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+					result.setKeepCallback(true);
+					return result;
+
+				} catch (Exception e) {
+					return new PluginResult(PluginResult.Status.ERROR, "getDeviceStatus error: " + e.getMessage());
+				}
+			}
+		});
+	}
+
+	private boolean checkIfBluetoothIsEnabled() {
+		return bluetoothAdapter!=null && bluetoothAdapter.isEnabled();
+	}
+
 	private void isBluetoothEnabled(CallbackContext callbackContext) {
 	   	
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
@@ -550,9 +623,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 			public PluginResult run() {
 				try {
 					//Check the Bluetooth service is running
-					boolean available = bluetoothAdapter!=null && bluetoothAdapter.isEnabled();
+					boolean available = checkIfBluetoothIsEnabled();
 					return new PluginResult(PluginResult.Status.OK, available);
-					
+
 		        } catch (Exception e) {
 					debugWarn("'isBluetoothEnabled' exception "+e.getMessage());
 					return new PluginResult(PluginResult.Status.ERROR, e.getMessage());
