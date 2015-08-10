@@ -409,6 +409,49 @@
     } :command];
 }
 
+- (void)getDeviceStatus:(CDVInvokedUrlCommand*)command {
+    [self _handleCallSafely:^CDVPluginResult *(CDVInvokedUrlCommand *command) {
+        
+        BOOL areLocationServicesEnabled = YES;
+        
+        // location services
+        CLAuthorizationStatus authorizationStatus = [CLLocationManager authorizationStatus];
+        
+        areLocationServicesEnabled = (authorizationStatus == kCLAuthorizationStatusAuthorized) ||
+            (authorizationStatus == kCLAuthorizationStatusAuthorizedWhenInUse) ||
+            (authorizationStatus == kCLAuthorizationStatusAuthorizedAlways);
+        
+        // bluetooth services
+        //this should be sufficient - otherwise will need to add a centralmanager reference
+        BOOL isBluetoothEnabled = _peripheralManager.state == CBPeripheralManagerStatePoweredOn;
+        
+        // local notifications
+        BOOL areLocalNotificationsEnabled = YES;
+        
+        // notification services
+        if ([[UIApplication sharedApplication]
+             respondsToSelector:@selector(registerUserNotificationSettings:)])
+        {
+            UIUserNotificationType types;
+            UIUserNotificationSettings *settings;
+            
+            settings = [[UIApplication sharedApplication]
+                        currentUserNotificationSettings];
+            
+            types = UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound;
+            
+            areLocalNotificationsEnabled = (settings.types & types);
+        }
+        
+        // combine results
+        NSDictionary *dict = @{@"locationServicesEnabled": [NSNumber numberWithBool: areLocationServicesEnabled], @"bluetoothEnabled": [NSNumber numberWithBool: isBluetoothEnabled], @"localNotificationsEnabled": [NSNumber numberWithBool: areLocalNotificationsEnabled] };
+        
+        return [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict];
+        
+        
+    } :command];
+}
+
 - (void)getAuthorizationStatus:(CDVInvokedUrlCommand*)command {
     [self _handleCallSafely:^CDVPluginResult *(CDVInvokedUrlCommand *command) {
         

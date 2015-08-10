@@ -96,7 +96,7 @@ const int CDV_LOCATION_MANAGER_INPUT_PARSE_ERROR = 100;
 - (void)enableBluetooth:(CDVInvokedUrlCommand*)command;
 - (void)disableBluetooth:(CDVInvokedUrlCommand*)command;
 
-
+- (void)getDeviceStatus:(CDVInvokedUrlCommand*)command;
 
 - (LMLogger*) getLogger;
 

@@ -544,6 +544,18 @@ LocationManager.prototype.appendToDeviceLog = function(message) {
 	return this._promisedExec('appendToDeviceLog', [message], []);
 };
 
+/**
+* Determines if location services, bluetooth, and local notifications are switched on 
+* according to the native layer.
+*
+* @returns {Q.Promise} Returns a promise which is resolved with an object containg
+* 3 boolean values: {locationServicesEnabled, bluetoothEnabled, localNotificationsEnabled}
+* indicating whether each area is active.
+*/
+LocationManager.prototype.getDeviceStatus = function() {
+	return this._promisedExec('getDeviceStatus', [], []);
+};
+
 var locationManager = new LocationManager();
 locationManager.Regions = Regions;
 locationManager.Region = Region;
