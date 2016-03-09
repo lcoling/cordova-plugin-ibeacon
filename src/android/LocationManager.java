@@ -61,10 +61,12 @@ import android.util.Log;
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 	
-    public static final String TAG = "com.unarin.cordova.beacon";
+    public static final String TAG = "iBeaconPlugin";
     private static int CDV_LOCATION_MANAGER_DOM_DELEGATE_TIMEOUT = 30;
-    
-    private BeaconManager iBeaconManager;
+	public static final String [] ALLOW_LOCATIONS = { Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION };
+	public static final int LOCATION_REQ_CODE = 0;
+
+	private BeaconManager iBeaconManager;
     private BlockingQueue<Runnable> queue;
     private PausableThreadPoolExecutor threadPoolExecutor;
     
@@ -74,7 +76,6 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     //listener for changes in state for system Bluetooth service
 	private BroadcastReceiver broadcastReceiver; 
 	private BluetoothAdapter bluetoothAdapter;
-
 
     /**
      * Constructor.
@@ -126,8 +127,6 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     	super.onDestroy(); 
     }
 
-
-    
 	//////////////// PLUGIN ENTRY POINT /////////////////////////////
     /**
      * Executes the request and returns PluginResult.
@@ -553,6 +552,14 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 		android.location.LocationManager locationManager =
 				(android.location.LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
 
+		//Android 6+ permissions for the application to use location services overrides other settings
+		boolean locationServicesAllowed = cordova.hasPermission(ALLOW_LOCATIONS[0]) || cordova.hasPermission(ALLOW_LOCATIONS[1]);
+		debugWarn("determineIfLocationServicesEnabled: " + locationServicesAllowed);
+
+		if( !locationServicesAllowed ) {
+			return false;
+		}
+
 		try {
 			gpsProviderEnabled = locationManager.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER);
 		}
@@ -585,6 +592,7 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 				boolean locationServicesEnabled = determineIfLocationServicesEnabled();
 
 				boolean isBluetoothEnabled = true;
+
 				try {
 					isBluetoothEnabled  = checkIfBluetoothIsEnabled();
 				} catch (Exception e) {
@@ -745,7 +753,12 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 	}
     
     private void startMonitoringForRegion(final JSONObject arguments, final CallbackContext callbackContext) {
-        
+
+		if( !hasBlueToothPermission() ){
+			debugWarn("startMonitoringForRegion not permitted");
+			return;
+		}
+
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
 
 			@Override
@@ -777,7 +790,11 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     }    
    
     private void stopMonitoringForRegion(final JSONObject arguments, final CallbackContext callbackContext) {
-    	
+		if( !hasBlueToothPermission() ){
+			debugWarn("stopMonitoringForRegion not permitted");
+			return;
+		}
+
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
 
 			@Override
@@ -805,7 +822,11 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     }
     
     private void startRangingBeaconsInRegion(final JSONObject arguments, final CallbackContext callbackContext) {
-        
+
+		if( !hasBlueToothPermission() ){
+			debugWarn("startRangingBeaconsInRegion not permitted");
+			return;
+		}
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
 
 			@Override
@@ -831,6 +852,12 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     }
     
     private void stopRangingBeaconsInRegion(final JSONObject arguments, CallbackContext callbackContext) {
+
+		if( !hasBlueToothPermission() ){
+			debugWarn("stopRangingBeaconsInRegion not permitted");
+			return;
+		}
+
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
 
 			@Override
@@ -868,7 +895,7 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 					
 					//Check app has the necessary permissions
 					if (!hasBlueToothPermission()) {
-						return new PluginResult(PluginResult.Status.ERROR, "Application does not BLUETOOTH or BLUETOOTH_ADMIN permissions");
+						return new PluginResult(PluginResult.Status.ERROR, "Application does not have BLUETOOTH, BLUETOOTH_ADMIN or LOCATION permissions");
 					}
 					
 					//Check the Bluetooth service is running
@@ -1279,8 +1306,11 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 		Context context = cordova.getActivity();
 	    int access = context.checkCallingOrSelfPermission(Manifest.permission.BLUETOOTH);
 	    int adminAccess = context.checkCallingOrSelfPermission(Manifest.permission.BLUETOOTH_ADMIN); 
-	    		
-	    return (access == PackageManager.PERMISSION_GRANTED) && (adminAccess == PackageManager.PERMISSION_GRANTED);
+		boolean locationAccess = cordova.hasPermission(ALLOW_LOCATIONS[0]) || cordova.hasPermission(ALLOW_LOCATIONS[1]);
+
+		debugWarn("hasBlueToothPermission " + locationAccess);
+
+	    return (access == PackageManager.PERMISSION_GRANTED) && (adminAccess == PackageManager.PERMISSION_GRANTED) && locationAccess;
 	}
 
     //////// Async Task Handling ////////////////////////////////
