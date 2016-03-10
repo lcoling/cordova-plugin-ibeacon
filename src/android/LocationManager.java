@@ -755,8 +755,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
 		if( !hasBlueToothPermission() ){
 			debugWarn("startMonitoringForRegion not permitted");
-			PluginResult result = callbackContext.sendPluginResult(PluginResult.Status.OK);
+			PluginResult result = new PluginResult(PluginResult.Status.OK);
 			result.setKeepCallback(true);
+			callbackContext.sendPluginResult(result);
 			return;
 		}
 
@@ -793,8 +794,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
     private void stopMonitoringForRegion(final JSONObject arguments, final CallbackContext callbackContext) {
 		if( !hasBlueToothPermission() ){
 			debugWarn("stopMonitoringForRegion not permitted");
-			PluginResult result = callbackContext.sendPluginResult(PluginResult.Status.OK);
+			PluginResult result = new PluginResult(PluginResult.Status.OK);
 			result.setKeepCallback(true);
+			callbackContext.sendPluginResult(result);
 			return;
 		}
 
@@ -828,8 +830,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
 		if( !hasBlueToothPermission() ){
 			debugWarn("startRangingBeaconsInRegion not permitted");
-			PluginResult result = callbackContext.sendPluginResult(PluginResult.Status.OK);
+			PluginResult result = new PluginResult(PluginResult.Status.OK);
 			result.setKeepCallback(true);
+			callbackContext.sendPluginResult(result);
 			return;
 		}
 		_handleCallSafely(callbackContext, new ILocationManagerCommand() {
@@ -860,8 +863,9 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
 		if( !hasBlueToothPermission() ){
 			debugWarn("stopRangingBeaconsInRegion not permitted");
-			PluginResult result = callbackContext.sendPluginResult(PluginResult.Status.OK);
+			PluginResult result = new PluginResult(PluginResult.Status.OK);
 			result.setKeepCallback(true);
+			callbackContext.sendPluginResult(result);
 			return;
 		}
 
